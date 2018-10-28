@@ -9,3 +9,4 @@ include_directories(
 	)
 
 add_library(${PROJECT_NAME} ${CPP_SOURCES})
+target_include_directories(${PROJECT_NAME} INTERFACE include)
