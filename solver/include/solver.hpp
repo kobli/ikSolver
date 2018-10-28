@@ -7,7 +7,7 @@ namespace ik {
 		template<typename V>
 			void solveChain(Chain<V>& chain, unsigned jointID, V newPos)
 			{
-
+				chain.getJoint(jointID).position = newPos;
 			}
 	}
 }

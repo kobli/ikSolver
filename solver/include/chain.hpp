@@ -9,7 +9,13 @@ namespace ik {
 		public:
 			// the joints should be added starting from the base
 			// expects absolute positions of the joints
-			void appendJoint(const Joint<V>& j);
+			void appendJoint(const Joint<V>& j) {
+				_joints.push_back(j);
+			}
+
+			Joint<V>& getJoint(unsigned jointID) {
+				return _joints[jointID];
+			}
 
 		private:
 			unsigned _baseJointID;
