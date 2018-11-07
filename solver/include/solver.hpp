@@ -9,16 +9,16 @@ namespace ik {
 	namespace FABRIK {
 
 		template<typename V>
-			V constrainedJointRotation(const Joint<V>& j, V boneDir, V prevBoneDir)
+			V constrainedJointRotation(const Joint<V>* j, V boneDir, V prevBoneDir)
 			{
-				if(prevBoneDir.getLength() != 0) {
+				if(prevBoneDir.getLength() != 0 && j != nullptr) {
 					using namespace std;
 					float prevBoneDirAngleDeg = atan2(prevBoneDir.Y, prevBoneDir.X)/M_PI*180; // the angle is measured CCW
 					boneDir.rotateBy(-prevBoneDirAngleDeg); // rotates the vector counter-clockwise
 
 					float boneDirAngle = atan2(boneDir.Y, boneDir.X);
-					boneDirAngle = min(boneDirAngle, j.maxXAngleCCW);
-					boneDirAngle = max(boneDirAngle, -j.maxXAngleCW);
+					boneDirAngle = min(boneDirAngle, j->maxXAngleCCW);
+					boneDirAngle = max(boneDirAngle, -j->maxXAngleCW);
 
 					return V(1,0).rotateBy(boneDirAngle/M_PI*180).rotateBy(prevBoneDirAngleDeg).normalize();
 				}
@@ -30,22 +30,26 @@ namespace ik {
 		template<typename V>
 			void solveChainBidirectional(Chain<V>& chain, unsigned endEffectorID, unsigned baseID, V newPos)
 			{
-				V prevJointPrevPos = chain.getJoint(endEffectorID).position;
-				V prevJointCurPos = newPos;
-				V prevJointRotation;
 				assert(endEffectorID != baseID);
-
 				int inc = endEffectorID > baseID? -1: 1;
-				for(int i = endEffectorID; i != int(baseID+inc); i += inc) {
-					Joint<V>& j = chain.getJoint(i);
-					float boneLength = (j.position-prevJointPrevPos).getLength();
-					V jointRotation = (j.position-prevJointCurPos).normalize();
-					jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
-					newPos = prevJointCurPos + jointRotation*boneLength;
+
+				Joint<V>* j = &chain.getJoint(endEffectorID);
+				V prevJointPrevPos = j->position;
+				V prevJointCurPos = (j->position = newPos);
+				V prevJointRotation = (chain.getJoint(endEffectorID+inc).position - newPos).normalize();
+				prevJointRotation = constrainedJointRotation(j, prevJointRotation, V(1,0));
+
+				for(int i = endEffectorID+inc; i != int(baseID+inc); i += inc) {
+					j = &chain.getJoint(i);
+					float boneLength = (j->position-prevJointPrevPos).getLength();
+					newPos = prevJointCurPos + prevJointRotation*boneLength;
+					if(i != int(baseID)) {
+						V jointRotation = (chain.getJoint(i+inc).position-newPos).normalize();
+						prevJointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
+					}
 					prevJointCurPos = newPos;
-					prevJointPrevPos = j.position;
-					prevJointRotation = jointRotation;
-					j.position = newPos;
+					prevJointPrevPos = j->position;
+					j->position = newPos;
 				}
 			}
 

@@ -85,10 +85,11 @@ int main()
 	ISceneManager* smgr = device->getSceneManager();
 
 	Chain chain;
+	float a = M_PI/2.;
 #ifndef D3
-	chain.appendJoint({Vector(230)});
-	chain.appendJoint({Vector(300, 150)});
-	chain.appendJoint({Vector(350, 150)});
+	chain.appendJoint({Vector(230), a/2, a/2});
+	chain.appendJoint({Vector(300, 150), a, 0});
+	chain.appendJoint({Vector(350, 150), a, a});
 	chain.appendJoint({Vector(400, 200)});
 #else
 	chain.appendJoint({Vector(230)});
