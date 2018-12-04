@@ -9,7 +9,7 @@ using namespace video;
 using namespace io;
 using namespace gui;
 
-#define D2
+#define D3
 
 vector2d<int> v2ftoi(const vector2df& v) {
 	return vector2d<int>(int(v.X), int(v.Y));
@@ -49,6 +49,7 @@ using Chain = ik::Chain<Vector>;
 using Joint = ik::Joint<Vector>;
 
 void drawChain(IVideoDriver* driver, const Chain& chain) {
+	driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
 	const Joint* prevJoint = &chain.getJoint(0);
 	for(unsigned i = 1; i < chain.jointCount(); ++i) {
 		const Joint* nextJoint = &chain.getJoint(i);
@@ -93,12 +94,13 @@ int main()
 	chain.appendJoint({Vector(400, 200)});
 #else
 	chain.appendJoint({Vector(230)});
-	chain.appendJoint({Vector(300, 150, 100)});
-	chain.appendJoint({Vector(350, 150, 150)});
-	chain.appendJoint({Vector(400, 200, 200)});
+	chain.appendJoint({Vector(300, 150, 0)});
+	chain.appendJoint({Vector(350, 150, 0)});
+	chain.appendJoint({Vector(400, 200, 0)});
 
 	ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();
-	camera->setTarget(vector3df(100));
+	camera->setPosition(vector3df(0,0,1000));
+	camera->setTarget(vector3df(0));
 #endif
 
 	while(device->run())
@@ -111,11 +113,9 @@ int main()
 		if(receiver.LMBpressed) {
 			camera->setInputReceiverEnabled(false);
 			device->getCursorControl()->setVisible(true);
-			vector2d<int> cursorPos = device->getCursorControl()->getPosition();
-			vector3df p{(float(cursorPos.X)/driver->getScreenSize().Width)*2-1, (1-float(cursorPos.Y)/driver->getScreenSize().Height)*2-1, 0};
-			CMatrix4<float> VPMatrixInverse;
-			(camera->getProjectionMatrix()*camera->getViewMatrix()).getInverse(VPMatrixInverse);
-			VPMatrixInverse.transformVect(p);
+			line3d<f32> rayFromCursor = smgr->getSceneCollisionManager()->getRayFromScreenCoordinates(device->getCursorControl()->getPosition());
+			float d = 300;
+			vector3df p = rayFromCursor.start + rayFromCursor.getVector().normalize()*d;
 			ik::FABRIK::solveChain(chain, chain.jointCount()-1, p);
 		}
 		else {
