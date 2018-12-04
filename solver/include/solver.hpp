@@ -14,13 +14,18 @@ namespace ik {
 				if(prevBoneDir.getLength() != 0 && j != nullptr) {
 					using namespace std;
 					float prevBoneDirAngleDeg = atan2(prevBoneDir.Y, prevBoneDir.X)/M_PI*180; // the angle is measured CCW
-					boneDir.rotateBy(-prevBoneDirAngleDeg); // rotates the vector counter-clockwise
+					boneDir.rotateXYBy(-prevBoneDirAngleDeg); // rotates the vector counter-clockwise
 
 					float boneDirAngle = atan2(boneDir.Y, boneDir.X);
 					boneDirAngle = min(boneDirAngle, j->maxXAngleCCW);
 					boneDirAngle = max(boneDirAngle, -j->maxXAngleCW);
 
-					return V(1,0).rotateBy(boneDirAngle/M_PI*180).rotateBy(prevBoneDirAngleDeg).normalize();
+					V r(0);
+					r.X = 1;
+					r.rotateXYBy(boneDirAngle/M_PI*180);
+					r.rotateXYBy(prevBoneDirAngleDeg);
+					r.normalize();
+					return r;
 				}
 				else
 					return boneDir;
@@ -37,7 +42,9 @@ namespace ik {
 				V prevJointPrevPos = j->position;
 				V prevJointCurPos = (j->position = newPos);
 				V prevJointRotation = (chain.getJoint(endEffectorID+inc).position - newPos).normalize();
-				prevJointRotation = constrainedJointRotation(j, prevJointRotation, V(1,0));
+				V defV(0);
+				defV.X = 1;
+				prevJointRotation = constrainedJointRotation(j, prevJointRotation, defV);
 
 				for(int i = endEffectorID+inc; i != int(baseID+inc); i += inc) {
 					j = &chain.getJoint(i);
