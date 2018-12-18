@@ -4,7 +4,6 @@
 #include "joint.hpp"
 
 namespace ik {
-	template<typename V>
 	class Chain {
 		public:
 			Chain(): _baseJointID{0}
@@ -12,15 +11,15 @@ namespace ik {
 
 			// the joints should be added starting from the base
 			// expects absolute positions of the joints
-			void appendJoint(const Joint<V>& j) {
+			void appendJoint(const Joint& j) {
 				_joints.push_back(j);
 			}
 
-			Joint<V>& getJoint(unsigned jointID) {
+			Joint& getJoint(unsigned jointID) {
 				return _joints[jointID];
 			}
 
-			const Joint<V>& getJoint(unsigned jointID) const {
+			const Joint& getJoint(unsigned jointID) const {
 				return _joints[jointID];
 			}
 
@@ -34,7 +33,7 @@ namespace ik {
 
 		private:
 			unsigned _baseJointID;
-			std::vector<Joint<V>> _joints;
+			std::vector<Joint> _joints;
 	};
 
 }

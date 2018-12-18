@@ -1,5 +1,7 @@
 #include <irrlicht.h>
 #include "solver.hpp"
+
+static const float DisplayOrientationSize = 10;
 using namespace std;
 using namespace irr;
 
@@ -8,8 +10,6 @@ using namespace scene;
 using namespace video;
 using namespace io;
 using namespace gui;
-
-#define D3
 
 vector2d<int> v2ftoi(const vector2df& v) {
 	return vector2d<int>(int(v.X), int(v.Y));
@@ -27,38 +27,30 @@ vector3df v3itof(const vector3d<int>& v) {
 	return vector3df(v.X, v.Y, v.Z);
 }
 
-#ifndef D3
-using Vector = vector2d<float>;
-using Chain = ik::Chain<Vector>;
-using Joint = ik::Joint<Vector>;
-
-void drawChain(IVideoDriver* driver, const Chain& chain) {
-	const Joint* prevJoint = &chain.getJoint(0);
-	for(unsigned i = 1; i < chain.jointCount(); ++i) {
-		const Joint* nextJoint = &chain.getJoint(i);
-		driver->draw2DLine(v2ftoi(prevJoint->position), v2ftoi(nextJoint->position));
-		driver->draw2DPolygon(v2ftoi(prevJoint->position), 10);
-		prevJoint = nextJoint;
-	}
+vector3df vTov3f(const Vector& v) {
+	return {v.x, v.y, v.z};
 }
 
-#else
+Vector v3fTov(const vector3df& v) {
+	return {v.X, v.Y, v.Z};
+}
 
-using Vector = vector3d<float>;
-using Chain = ik::Chain<Vector>;
-using Joint = ik::Joint<Vector>;
+
+using Chain = ik::Chain;
+using Joint = ik::Joint;
 
 void drawChain(IVideoDriver* driver, const Chain& chain) {
 	driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
 	const Joint* prevJoint = &chain.getJoint(0);
 	for(unsigned i = 1; i < chain.jointCount(); ++i) {
 		const Joint* nextJoint = &chain.getJoint(i);
-		driver->draw3DLine(prevJoint->position, nextJoint->position);
+		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(nextJoint->position));
+		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(prevJoint->position+prevJoint->orientation*DisplayOrientationSize));
 		//driver->draw(v2ftoi(prevJoint->position), 10);
 		prevJoint = nextJoint;
 	}
+	driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(prevJoint->position+prevJoint->orientation*DisplayOrientationSize));
 }
-#endif
 
 class MyEventReceiver : public IEventReceiver
 {
@@ -87,42 +79,30 @@ int main()
 
 	Chain chain;
 	float a = M_PI/2.;
-#ifndef D3
-	chain.appendJoint({Vector(230), a/2, a/2});
-	chain.appendJoint({Vector(300, 150), a, 0});
-	chain.appendJoint({Vector(350, 150), a, a});
-	chain.appendJoint({Vector(400, 200)});
-#else
-	chain.appendJoint({Vector(230)});
-	chain.appendJoint({Vector(300, 150, 0)});
-	chain.appendJoint({Vector(350, 150, 0)});
-	chain.appendJoint({Vector(400, 200, 0)});
+	chain.appendJoint({Vector(230)				, Vector(1, 0, 0)});
+	chain.appendJoint({Vector(300, 150, 0), Vector(1, 0, 0)});
+	chain.appendJoint({Vector(350, 150, 0), Vector(1, 0, 0)});
+	chain.appendJoint({Vector(400, 200, 0), Vector(1, 0, 0)});
 
 	ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();
 	camera->setPosition(vector3df(0,0,1000));
 	camera->setTarget(vector3df(0));
-#endif
 
 	while(device->run())
 	{
 		driver->beginScene(true, true, SColor(255,100,101,140));
-#ifndef D3
-	if(receiver.LMBpressed)
-		ik::FABRIK::solveChain(chain, chain.jointCount()-1, v2itof(device->getCursorControl()->getPosition()));
-#else
 		if(receiver.LMBpressed) {
 			camera->setInputReceiverEnabled(false);
 			device->getCursorControl()->setVisible(true);
 			line3d<f32> rayFromCursor = smgr->getSceneCollisionManager()->getRayFromScreenCoordinates(device->getCursorControl()->getPosition());
 			float d = 300;
 			vector3df p = rayFromCursor.start + rayFromCursor.getVector().normalize()*d;
-			ik::FABRIK::solveChain(chain, chain.jointCount()-1, p);
+			ik::FABRIK::solveChain(chain, chain.jointCount()-1, v3fTov(p));
 		}
 		else {
 			camera->setInputReceiverEnabled(true);
 			device->getCursorControl()->setVisible(false);
 		}
-#endif
 		drawChain(driver, chain);
 		smgr->drawAll();
 		driver->endScene();

@@ -1,13 +1,15 @@
 #ifndef JOINT_HPP_18_10_28_10_08_44
 #define JOINT_HPP_18_10_28_10_08_44 
 #include <cmath>
+#include "vector.hpp"
 
 namespace ik {
-	template<typename V>
 	struct Joint {
-		V position;
-		float maxXAngleCW = M_PI;
-		float maxXAngleCCW = M_PI;
+		Vector position;
+		Vector orientation;
+		//TODO how to define the allowed rotation ranges? (4 angles .. names?)
+		//float maxZAngleCW = M_PI;
+		//float maxZAngleCCW = M_PI;
 	};
 }
 #endif /* JOINT_HPP_18_10_28_10_08_44 */
