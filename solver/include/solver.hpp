@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include "chain.hpp"
+#include "quaternion.hpp"
 
 namespace ik {
 	namespace FABRIK {
@@ -36,7 +37,7 @@ namespace ik {
 		}
 
 
-		void solveChainBidirectional(Chain& chain, unsigned endEffectorID, unsigned baseID, Vector newPos)
+		void solveChainBidirectional(Chain& chain, unsigned endEffectorID, unsigned baseID, Vector newPos, Vector newOrientation)
 		{
 			assert(endEffectorID != baseID);
 			int inc = endEffectorID > baseID? -1: 1;
@@ -47,6 +48,8 @@ namespace ik {
 			Vector prevJointRotation = (chain.getJoint(endEffectorID+inc).position - newPos).normalize();
 			Vector defV(0);
 			defV.x = 1;
+			//TODO change the EE orientation to newOr
+			//TODO constrain the newOrientation
 			prevJointRotation = constrainedJointRotation(j, prevJointRotation, defV);
 
 			for(int i = endEffectorID+inc; i != int(baseID+inc); i += inc) {
@@ -54,7 +57,12 @@ namespace ik {
 				float boneLength = (j->position-prevJointPrevPos).length();
 				newPos = prevJointCurPos + prevJointRotation*boneLength;
 				if(i != int(baseID)) {
+					Vector jointPrevRotation = chain.getJoint(i+inc).position-chain.getJoint(i).position;
 					Vector jointRotation = (chain.getJoint(i+inc).position-newPos).normalize();
+					// update the orientation (apply the same transform as on the rotation)
+					Quaternion r(jointPrevRotation, jointRotation);
+					r.rotateVector(j->orientation);
+					//TODO constrain the orientation of j
 					prevJointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
 				}
 				prevJointCurPos = newPos;
@@ -63,18 +71,18 @@ namespace ik {
 			}
 		}
 
-		void solveChain(Chain& chain, unsigned jointID, Vector newPos, float epsilon = 0.1, unsigned maxIter = 10)
+		void solveChain(Chain& chain, unsigned jointID, Vector newPos, Vector newOrientation, float epsilon = 0.1, unsigned maxIter = 10)
 		{
 			unsigned baseID = chain.baseJointID();
 			Vector initialBasePosition = chain.getJoint(baseID).position;
 			unsigned i = 0;
 			float lastEpsilon = std::numeric_limits<float>::max();
 			do {
-				solveChainBidirectional(chain, jointID, baseID, newPos);
-				solveChainBidirectional(chain, baseID, jointID, initialBasePosition);
+				solveChainBidirectional(chain, jointID, baseID, newPos, newOrientation);
+				solveChainBidirectional(chain, baseID, jointID, initialBasePosition, chain.getJoint(baseID).orientation);
 				float newEpsilon = (newPos-chain.getJoint(jointID).position).length();
 				if(newEpsilon >= lastEpsilon) {
-					std::cerr << "FABRIK is diverging.\n";
+					;//std::cerr << "FABRIK is diverging.\n";
 				}
 				lastEpsilon = newEpsilon;
 				++i;

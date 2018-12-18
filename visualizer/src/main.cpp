@@ -97,7 +97,7 @@ int main()
 			line3d<f32> rayFromCursor = smgr->getSceneCollisionManager()->getRayFromScreenCoordinates(device->getCursorControl()->getPosition());
 			float d = 300;
 			vector3df p = rayFromCursor.start + rayFromCursor.getVector().normalize()*d;
-			ik::FABRIK::solveChain(chain, chain.jointCount()-1, v3fTov(p));
+			ik::FABRIK::solveChain(chain, chain.jointCount()-1, v3fTov(p), {0,1,0});
 		}
 		else {
 			camera->setInputReceiverEnabled(true);

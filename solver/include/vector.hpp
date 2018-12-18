@@ -4,7 +4,7 @@
 
 class Vector {
 	public:
-		Vector(float v): x{v}, y{v}, z{v}
+		Vector(float v = 0): x{v}, y{v}, z{v}
 		{}
 
 		Vector(float X, float Y, float Z): x{X}, y{Y}, z{Z}
@@ -35,6 +35,18 @@ class Vector {
 
 		Vector& normalize() {
 			return (*this) /= length();
+		}
+
+		Vector cross(const Vector& o) const {
+			return Vector{
+				y*o.z - z*o.y,
+				z*o.x - x*o.z,
+				x*o.y - y*o.x
+			};
+		}
+
+		float dot(const Vector& o) const {
+			return x*o.x + y*o.y + z*o.z;
 		}
 
 		float x;
