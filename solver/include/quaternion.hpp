@@ -44,6 +44,14 @@ class Quaternion {
 			return sqrt(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z + angle*angle);
 		}
 
+		float getAngle() const {
+			return angle;
+		}
+
+		void setAngle(float a) {
+			angle = a;
+		}
+
 	private:
 		Vector axis;
 		float angle;

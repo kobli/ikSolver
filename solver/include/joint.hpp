@@ -7,6 +7,8 @@ namespace ik {
 	struct Joint {
 		Vector position;
 		Vector orientation;
+		float maxCWtwist;
+		float maxCCWtwist;
 		//TODO how to define the allowed rotation ranges? (4 angles .. names?)
 		//float maxZAngleCW = M_PI;
 		//float maxZAngleCCW = M_PI;

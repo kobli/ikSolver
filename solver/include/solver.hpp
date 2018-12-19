@@ -36,6 +36,29 @@ namespace ik {
 				*/
 		}
 
+		Vector constrainedJointOrientation(const Joint* j, Vector prevJointOrientation, Vector boneDir, Vector prevBoneDir)
+		{
+			// 1) align the boneDir with prevBoneDir
+			// 	- apply the same rotation to orientation vector
+			// 	- now the two orientation vectors are in a plane perpendicular to the prevBoneDir
+			Quaternion q(boneDir, prevBoneDir);
+			Vector newOrientation = j->orientation;
+			q.rotateVector(newOrientation);
+			// 2) determine the angle between Op and O of the previous joint
+			Quaternion oo(prevJointOrientation, newOrientation);
+			// 3) clamp the angle and apply it
+			using namespace std;
+			oo.setAngle(min(j->maxCWtwist, max(-j->maxCCWtwist, oo.getAngle())));
+			newOrientation = prevJointOrientation;
+			oo.rotateVector(newOrientation);
+			// 4) apply rotor R to the result (R: -prevBoneDir (+z) => boneDir)
+			q.setAngle(-1*q.getAngle());
+			q.rotateVector(newOrientation);
+
+			newOrientation.normalize();
+			return newOrientation;
+		}
+
 
 		void solveChainBidirectional(Chain& chain, unsigned endEffectorID, unsigned baseID, Vector newPos, Vector newOrientation)
 		{
@@ -46,11 +69,12 @@ namespace ik {
 			Vector prevJointPrevPos = j->position;
 			Vector prevJointCurPos = (j->position = newPos);
 			Vector prevJointRotation = (chain.getJoint(endEffectorID+inc).position - newPos).normalize();
-			Vector defV(0);
-			defV.x = 1;
-			//TODO change the EE orientation to newOr
-			//TODO constrain the newOrientation
-			prevJointRotation = constrainedJointRotation(j, prevJointRotation, defV);
+			Vector nullJointRotation(1, 0, 0);
+			Vector nullJointOrientation(1, 0, 0);
+			j->orientation = newOrientation;
+			j->orientation = constrainedJointOrientation(j, nullJointOrientation, prevJointRotation, nullJointRotation);
+			Vector prevJointOrientation = j->orientation;
+			prevJointRotation = constrainedJointRotation(j, prevJointRotation, nullJointRotation);
 
 			for(int i = endEffectorID+inc; i != int(baseID+inc); i += inc) {
 				j = &chain.getJoint(i);
@@ -62,7 +86,8 @@ namespace ik {
 					// update the orientation (apply the same transform as on the rotation)
 					Quaternion r(jointPrevRotation, jointRotation);
 					r.rotateVector(j->orientation);
-					//TODO constrain the orientation of j
+					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
+					prevJointOrientation = j->orientation;
 					prevJointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
 				}
 				prevJointCurPos = newPos;
