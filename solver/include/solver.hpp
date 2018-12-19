@@ -11,29 +11,14 @@ namespace ik {
 
 		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir)
 		{
+			// find projection (O) of new target position (t) onto jointPos.+boneDir line
+			// find distance (S) between t and O
+			// rotate and translate (R) t (T) so that O is at 0 and oriented according to x,y axes
+			// find quadrant which T belongs to
+			// find conic section which describes the allowed rotation in that quadrant
+			// if T is not within the conic section, move it to the closest point on the conic section
+			// apply inverse R on T
 			return boneDir;
-			/*
-			if(prevBoneDir.length() != 0 && j != nullptr) {
-				using namespace std;
-
-				// rotate the bone vector into "ground-plane of prevBoneDir" (xz)
-				float prevBoneDirZAngleDeg = atan2(prevBoneDir.y, prevBoneDir.x)/M_PI*180; // the angle is measured CCW
-				boneDir.rotateXYBy(-prevBoneDirZAngleDeg); // rotates the vector counter-clockwise
-
-				float boneDirZAngle = atan2(boneDir.y, boneDir.x);
-				boneDirZAngle = min(boneDirZAngle, j->maxZAngleCCW);
-				boneDirZAngle = max(boneDirZAngle, -j->maxZAngleCW);
-
-				Vector r(0);
-				r.x = 1;
-				r.rotateXYBy(boneDirZAngle/M_PI*180);
-				r.rotateXYBy(prevBoneDirZAngleDeg);
-				r.normalize();
-				return r;
-			}
-			else
-				return boneDir;
-				*/
 		}
 
 		Vector constrainedJointOrientation(const Joint* j, Vector prevJointOrientation, Vector boneDir, Vector prevBoneDir)
