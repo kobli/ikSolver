@@ -41,8 +41,8 @@ using Joint = ik::Joint;
 
 void drawChain(IVideoDriver* driver, const Chain& chain) {
 	driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
-	const Joint* prevJoint = &chain.getJoint(0);
-	for(unsigned i = 1; i < chain.jointCount(); ++i) {
+	const Joint* prevJoint = &chain.getJoint(chain.baseJointID());
+	for(unsigned i = chain.baseJointID()+1; i < chain.jointCount(); ++i) {
 		const Joint* nextJoint = &chain.getJoint(i);
 		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(nextJoint->position));
 		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(prevJoint->position+prevJoint->orientation*DisplayOrientationSize));

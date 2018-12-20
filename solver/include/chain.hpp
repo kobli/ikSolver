@@ -3,10 +3,23 @@
 #include <vector>
 #include "joint.hpp"
 
+/*
+ * base joint has fixed position and orientation (typically in model space)
+ * orientation vector is the up vector (y+) for the coordinate system of the joint
+ * to fully specify the base joint orientation (and to be able to apply the constraints), we also need a front vector (z+),
+ * pointing from "previous joint" towards the base joint, which is specified by using one extra joint preceeding the base joint (only its position is relevant)
+ *
+ * the constraints of the endEffector are ignored since there is no bone going out from it
+ *
+ * constraints in the base joint define
+ * - how much the orientation can differ from the or. of the previous joint
+ * - what are the allowed angles of the outgoing bone w.r.t the ingoing bone
+ */
+
 namespace ik {
 	class Chain {
 		public:
-			Chain(): _baseJointID{0}
+			Chain(): _baseJointID{1}
 			{}
 
 			// the joints should be added starting from the base

@@ -9,11 +9,29 @@
 namespace ik {
 	namespace FABRIK {
 
-		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir)
+		// prevBoneDir from j-1 towards j, boneDir from j towards j+1
+		// t is new position of j+1
+		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir, Vector t)
 		{
-			// find projection (O) of new target position (t) onto jointPos.+boneDir line
+			return boneDir;
+			// find projection (O) of new target position (t) onto jointPos.+lDir line
+			Vector lDir = prevBoneDir;
+			lDir.normalize();
+			Vector v = t-j->position;
+			Vector o = j->position + lDir*(v).dot(lDir);
 			// find distance (S) between t and O
+			float s = (t-o).length();
 			// rotate and translate (R) t (T) so that O is at 0 and oriented according to x,y axes
+			// prevBoneDir = z+ (screen to chair), 
+			// j.orientation = y+ (up)
+			//Vector Rtr = o*-1;
+			//Vector T = t+Rtr;
+			//boneDir.normalize();
+			//std::cout << boneDir.dot(j->orientation) << std::endl;
+			//Quaternion Rrot(prevBoneDir, Vector(0,0,1));
+			//Rrot = Rrot * Quaternion(j->orientation, Vector(0,1,0));
+			//Rrot.rotateVector(T);
+
 			// find quadrant which T belongs to
 			// find conic section which describes the allowed rotation in that quadrant
 			// if T is not within the conic section, move it to the closest point on the conic section
@@ -23,6 +41,7 @@ namespace ik {
 
 		Vector constrainedJointOrientation(const Joint* j, Vector prevJointOrientation, Vector boneDir, Vector prevBoneDir)
 		{
+			return j->orientation;
 			// 1) align the boneDir with prevBoneDir
 			// 	- apply the same rotation to orientation vector
 			// 	- now the two orientation vectors are in a plane perpendicular to the prevBoneDir
@@ -51,33 +70,51 @@ namespace ik {
 			int inc = endEffectorID > baseID? -1: 1;
 
 			Joint* j = &chain.getJoint(endEffectorID);
+			// adjust the position of the "end-effector"
 			Vector prevJointPrevPos = j->position;
 			Vector prevJointCurPos = (j->position = newPos);
-			Vector prevJointRotation = (chain.getJoint(endEffectorID+inc).position - newPos).normalize();
-			Vector nullJointRotation(1, 0, 0);
-			Vector nullJointOrientation(1, 0, 0);
-			j->orientation = newOrientation;
-			j->orientation = constrainedJointOrientation(j, nullJointOrientation, prevJointRotation, nullJointRotation);
-			Vector prevJointOrientation = j->orientation;
-			prevJointRotation = constrainedJointRotation(j, prevJointRotation, nullJointRotation);
 
+			// normalize the new orientation
+			// TODO
+			
+			// adjust the orientation of the "end-effector"
+			Vector prevJointOrientation = (j->orientation = newOrientation);
+
+			// calculate the rotation of the previous bone, if there is one
+			Vector prevJointRotation;
+			unsigned pjID = endEffectorID-inc;
+			bool hasPreceedingBone = false;
+			if(pjID < chain.jointCount()) {
+				prevJointRotation = (chain.getJoint(endEffectorID).position - chain.getJoint(pjID).position).normalize();
+				hasPreceedingBone = true;
+			}
 			for(int i = endEffectorID+inc; i != int(baseID+inc); i += inc) {
 				j = &chain.getJoint(i);
 				float boneLength = (j->position-prevJointPrevPos).length();
-				newPos = prevJointCurPos + prevJointRotation*boneLength;
-				if(i != int(baseID)) {
-					Vector jointPrevRotation = chain.getJoint(i+inc).position-chain.getJoint(i).position;
-					Vector jointRotation = (chain.getJoint(i+inc).position-newPos).normalize();
-					// update the orientation (apply the same transform as on the rotation)
-					Quaternion r(jointPrevRotation, jointRotation);
-					r.rotateVector(j->orientation);
-					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
-					prevJointOrientation = j->orientation;
-					prevJointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
+				Vector jointRotation = (j->position - prevJointCurPos).normalize();
+				// if there is a preceeding bone, apply the constraints
+				if(hasPreceedingBone) {
+
+					//? normalize the orientation (should be perpendicular to the boneDirection)
+
+					// update joint orientation (apply the same transform as on the rotation)
+					//Vector jointPrevRotation = (chain.getJoint(i+inc).position-chain.getJoint(i).position).normalize(); // FIXME use prevJointPrevPos
+					//Quaternion r(jointPrevRotation, jointRotation);
+					//r.rotateVector(j->orientation);
+					//// apply orientation constraints
+					//prevJointOrientation = (j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation));
+
+					//// apply rotation constraints
+					//jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation, newPos + jointRotation*(j->position-chain.getJoint(i+inc).position).length());
+					
+					// normalize the orientation (the boneDir might have changed)
 				}
-				prevJointCurPos = newPos;
+
+				//	update the position of the current joint
 				prevJointPrevPos = j->position;
-				j->position = newPos;
+				prevJointCurPos = (j->position = prevJointCurPos + jointRotation*boneLength);
+				prevJointRotation = jointRotation;
+				hasPreceedingBone = true;
 			}
 		}
 
@@ -85,11 +122,12 @@ namespace ik {
 		{
 			unsigned baseID = chain.baseJointID();
 			Vector initialBasePosition = chain.getJoint(baseID).position;
+			Vector initialBaseOrientation = chain.getJoint(baseID).orientation;
 			unsigned i = 0;
 			float lastEpsilon = std::numeric_limits<float>::max();
 			do {
 				solveChainBidirectional(chain, jointID, baseID, newPos, newOrientation);
-				solveChainBidirectional(chain, baseID, jointID, initialBasePosition, chain.getJoint(baseID).orientation);
+				solveChainBidirectional(chain, baseID, jointID, initialBasePosition, initialBaseOrientation);
 				float newEpsilon = (newPos-chain.getJoint(jointID).position).length();
 				if(newEpsilon >= lastEpsilon) {
 					;//std::cerr << "FABRIK is diverging.\n";
