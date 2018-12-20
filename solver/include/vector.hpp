@@ -49,6 +49,23 @@ class Vector {
 			return x*o.x + y*o.y + z*o.z;
 		}
 
+		// makes the vector perpendicular to o
+		// if the vector is collinear with o, it is left unchanged
+		// and the function returns false, otherwise returns true
+		bool perpendicularize(Vector o) {
+			o.normalize();
+			Vector self = *this;
+			self.normalize();
+			if(fabs(self.dot(o)) == 1) {
+				return false;
+			}
+			else {
+				Vector c = o.cross(self);
+				*this = c.cross(o);
+				return true;
+			}
+		}
+
 		float x;
 		float y;
 		float z;

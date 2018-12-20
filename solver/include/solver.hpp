@@ -75,7 +75,7 @@ namespace ik {
 			Vector prevJointCurPos = (j->position = newPos);
 
 			// normalize the new orientation
-			// TODO
+			assert(newOrientation.perpendicularize(chain.getJoint(endEffectorID+inc).position-newPos));
 			
 			// adjust the orientation of the "end-effector"
 			Vector prevJointOrientation = (j->orientation = newOrientation);
@@ -94,23 +94,21 @@ namespace ik {
 				Vector jointRotation = (j->position - prevJointCurPos).normalize();
 				// if there is a preceeding bone, apply the constraints
 				if(hasPreceedingBone) {
-
-					//? normalize the orientation (should be perpendicular to the boneDirection)
-
 					// update joint orientation (apply the same transform as on the rotation)
-					//Vector jointPrevRotation = (chain.getJoint(i+inc).position-chain.getJoint(i).position).normalize(); // FIXME use prevJointPrevPos
-					//Quaternion r(jointPrevRotation, jointRotation);
-					//r.rotateVector(j->orientation);
-					//// apply orientation constraints
+					Vector jointPrevRotation = (j->position - prevJointPrevPos).normalize();
+					Quaternion r(jointPrevRotation, jointRotation);
+					r.rotateVector(j->orientation);
+					// apply orientation constraints
 					//prevJointOrientation = (j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation));
 
-					//// apply rotation constraints
+					// apply rotation constraints
 					//jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation, newPos + jointRotation*(j->position-chain.getJoint(i+inc).position).length());
 					
 					// normalize the orientation (the boneDir might have changed)
+					j->orientation.perpendicularize(jointRotation);
 				}
 
-				//	update the position of the current joint
+				// update the position of the current joint
 				prevJointPrevPos = j->position;
 				prevJointCurPos = (j->position = prevJointCurPos + jointRotation*boneLength);
 				prevJointRotation = jointRotation;
