@@ -92,12 +92,13 @@ namespace ik {
 				j = &chain.getJoint(i);
 				float boneLength = (j->position-prevJointPrevPos).length();
 				Vector jointRotation = (j->position - prevJointCurPos).normalize();
-				// if there is a preceeding bone, apply the constraints
+				// update joint orientation (apply the same transform as on the rotation)
+				Vector jointPrevRotation = (j->position - prevJointPrevPos).normalize();
+				Quaternion r(jointPrevRotation, jointRotation);
+				r.rotateVector(j->orientation);
+				j->orientation.perpendicularize(jointRotation);
+				// constraints can be applied only if there is a preceeding bone - its rotation vector is needed
 				if(hasPreceedingBone) {
-					// update joint orientation (apply the same transform as on the rotation)
-					Vector jointPrevRotation = (j->position - prevJointPrevPos).normalize();
-					Quaternion r(jointPrevRotation, jointRotation);
-					r.rotateVector(j->orientation);
 					// apply orientation constraints
 					//prevJointOrientation = (j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation));
 
