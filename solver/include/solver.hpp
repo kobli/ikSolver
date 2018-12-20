@@ -41,7 +41,6 @@ namespace ik {
 
 		Vector constrainedJointOrientation(const Joint* j, Vector prevJointOrientation, Vector boneDir, Vector prevBoneDir)
 		{
-			return j->orientation;
 			// 1) align the boneDir with prevBoneDir
 			// 	- apply the same rotation to orientation vector
 			// 	- now the two orientation vectors are in a plane perpendicular to the prevBoneDir
@@ -100,19 +99,19 @@ namespace ik {
 				// constraints can be applied only if there is a preceeding bone - its rotation vector is needed
 				if(hasPreceedingBone) {
 					// apply orientation constraints
-					//prevJointOrientation = (j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation));
+					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
 
 					// apply rotation constraints
 					//jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation, newPos + jointRotation*(j->position-chain.getJoint(i+inc).position).length());
-					
 					// normalize the orientation (the boneDir might have changed)
-					j->orientation.perpendicularize(jointRotation);
+					//j->orientation.perpendicularize(jointRotation);
 				}
 
 				// update the position of the current joint
 				prevJointPrevPos = j->position;
 				prevJointCurPos = (j->position = prevJointCurPos + jointRotation*boneLength);
 				prevJointRotation = jointRotation;
+				prevJointOrientation = j->orientation;
 				hasPreceedingBone = true;
 			}
 		}
