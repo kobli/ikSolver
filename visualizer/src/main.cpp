@@ -78,10 +78,10 @@ int main()
 	ISceneManager* smgr = device->getSceneManager();
 
 	Chain chain;
-	float a = M_PI/2.;
+	float a = M_PI/2.-0.01;
 	chain.appendJoint({Vector(0)				, Vector(1, 0, 0), 0, 0, 0,0,0,0});
-	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, a, a,a,0,0});
-	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, a,a/2,0,0});
+	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, 0, 0,0,0,0});
+	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, a/2,a/2,0,0});
 	chain.appendJoint({Vector(0, 400, 0), Vector(1, 0, 0), 0, 0, 0,0,0,0});
 
 	ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();

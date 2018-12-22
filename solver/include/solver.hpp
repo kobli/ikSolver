@@ -3,17 +3,129 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <functional>
 #include "chain.hpp"
 #include "quaternion.hpp"
 
 namespace ik {
 	namespace FABRIK {
+		void getConstraintAnglesBasedOnQuadrant(const Vector& v, float thX, float thNX, float thY, float thNY, float& th1, float& th2)
+		{
+			// the choice of the second angle on a quadrant border does not matter
+			// the order of angles (th1/th2) does not matter
+			if(v.x >= 0) {
+				if(v.y >= 0) { // quadrant I
+					th1 = thX;
+					th2 = thY;
+				}
+				else { // quadrant IV
+					th1 = thX;
+					th2 = thNY;
+				}
+			}
+			else {
+				if(v.y >= 0) { // quadrant II
+					th1 = thNX;
+					th2 = thY;
+				}
+				else { // quadrant III
+					th1 = thNX;
+					th2 = thNY;
+				}
+			}
+		}
+
+		Vector findClosestPointOnFunction(Vector t, std::function<float(float)> f, float x1, float x2, float yEps = 0.1)
+		{
+			t.z = 0;
+			float y1 = f(x1);
+			float y2 = f(x2);
+			auto d = [&](const Vector& v) {
+				return (v-t).length();
+			};
+			float yDelta = 2*yEps; // anything that is larger than yEps will do
+			float prevDelta = 2*yDelta;
+			while(yDelta > yEps && x1 != x2 && prevDelta != yDelta) {
+				float xMid = (x1+x2)/2;
+				float yMid = f(xMid);
+				float dm = d({xMid,yMid,0});
+				float d1 = d({x1,y1,0});
+				float d2 = d({x2,y2,0});
+				prevDelta = yDelta;
+				if(dm < d1) {
+					x1 = xMid;
+					yDelta = fabs(y1-yMid);
+					y1 = yMid;
+				}
+				else if(dm < d2) {
+					x2 = xMid;
+					yDelta = fabs(y2-yMid);
+					y2 = yMid;
+				}
+			}
+			return {x1, y1, 0};
+		}
+
+		// currently works only when all thetas are smaller than PI/2
+		Vector nearestPointOnConicSectionIfOutside(const Vector& t, float thX, float thNX, float thY, float thNY, float s)
+		{
+			// find the closest point to t (nt) lying on the conicsection
+			Vector nt;
+			if(thX == thNX && thX == thY && thX == thNY) { // circle
+				Vector tDir = t;
+				tDir.z = 0;
+				tDir.normalize();
+				float r = s*tan(thX);
+				nt = tDir*r;
+			}
+			else if(
+					(thX  < M_PI/2) == 
+					(thNX < M_PI/2) == 
+					(thY  < M_PI/2) == 
+					(thNY < M_PI/2)) { // ellipsoid
+				float th1,
+							th2;
+				getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, th1, th2);
+				// a is the half-axis matching with x, it is not necessarilly the major axis
+				float a = s*tan(th1);
+				float b = s*tan(th2);
+				float sign = (t.y>=0)?1:-1;
+				auto ellipse = [&](float x) {
+					return sign*b/a*sqrt(a*a - x*x);
+				};
+				float x1,
+							x2;
+				if(t.x < 0) {
+					x1 = -a;
+					x2 = 0;
+				}
+				else {
+					x1 = 0;
+					x2 = a;
+				}
+				nt = findClosestPointOnFunction(t, ellipse, x1, x2);
+			}
+			else { // parabolic shape
+				//TODO
+			}
+
+			// if t is not within the conic section, move it to the closest point on the conic section (nt)
+			Vector tt = t;
+			tt.z = 0;
+			if(tt.length() > nt.length()) {
+				nt.z = t.z;
+				return nt;
+			}
+			else
+				return t;
+		}
 
 		// prevBoneDir from j-1 towards j, boneDir from j towards j+1
-		// t is new position of j+1
-		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir, Vector t)
+		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir)
 		{
-			return boneDir;
+			boneDir.normalize();
+			prevBoneDir.normalize();
+			Vector t = j->position + boneDir;
 			// find projection (O) of new target position (t) onto jointPos.+lDir line
 			Vector lDir = prevBoneDir;
 			lDir.normalize();
@@ -21,22 +133,27 @@ namespace ik {
 			Vector o = j->position + lDir*(v).dot(lDir);
 			// find distance (S) between t and O
 			float s = (t-o).length();
-			// rotate and translate (R) t (T) so that O is at 0 and oriented according to x,y axes
+			// rotate and translate (using transform R) t (T) so that O is at 0 and oriented according to x,y axes
 			// prevBoneDir = z+ (screen to chair), 
 			// j.orientation = y+ (up)
-			//Vector Rtr = o*-1;
-			//Vector T = t+Rtr;
-			//boneDir.normalize();
-			//std::cout << boneDir.dot(j->orientation) << std::endl;
-			//Quaternion Rrot(prevBoneDir, Vector(0,0,1));
-			//Rrot = Rrot * Quaternion(j->orientation, Vector(0,1,0));
-			//Rrot.rotateVector(T);
+			Vector Rtr = o*-1;
+			Vector T = t+Rtr;
+			Quaternion Rrot1(prevBoneDir, Vector(0,0,1));
+			Rrot1.rotateVector(T);
+			Quaternion Rrot2(j->orientation, Vector(0,1,0));
+			Rrot2.rotateVector(T);
 
-			// find quadrant which T belongs to
-			// find conic section which describes the allowed rotation in that quadrant
-			// if T is not within the conic section, move it to the closest point on the conic section
+			// find the nearest point on conic section if T lies outside of it
+			T = nearestPointOnConicSectionIfOutside(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, s);
+
 			// apply inverse R on T
-			return boneDir;
+			Rrot2.setAngle(-Rrot2.getAngle());
+			Rrot1.setAngle(-Rrot1.getAngle());
+			Rrot2.rotateVector(T);
+			Rrot1.rotateVector(T);
+			T = T-Rtr;
+
+			return T;
 		}
 
 		Vector constrainedJointOrientation(const Joint* j, Vector prevJointOrientation, Vector boneDir, Vector prevBoneDir)
@@ -63,7 +180,7 @@ namespace ik {
 		}
 
 
-		void solveChainBidirectional(Chain& chain, unsigned endEffectorID, unsigned baseID, Vector newPos, Vector newOrientation)
+		void solveChainBidirectional(Chain& chain, unsigned endEffectorID, unsigned baseID, Vector endEffectorNewPos, Vector newOrientation)
 		{
 			assert(endEffectorID != baseID);
 			int inc = endEffectorID > baseID? -1: 1;
@@ -71,10 +188,10 @@ namespace ik {
 			Joint* j = &chain.getJoint(endEffectorID);
 			// adjust the position of the "end-effector"
 			Vector prevJointPrevPos = j->position;
-			Vector prevJointCurPos = (j->position = newPos);
+			Vector prevJointCurPos = (j->position = endEffectorNewPos);
 
 			// normalize the new orientation
-			assert(newOrientation.perpendicularize(chain.getJoint(endEffectorID+inc).position-newPos));
+			assert(newOrientation.perpendicularize(chain.getJoint(endEffectorID+inc).position-endEffectorNewPos));
 			
 			// adjust the orientation of the "end-effector"
 			Vector prevJointOrientation = (j->orientation = newOrientation);
@@ -102,9 +219,9 @@ namespace ik {
 					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
 
 					// apply rotation constraints
-					//jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation, newPos + jointRotation*(j->position-chain.getJoint(i+inc).position).length());
+					jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
 					// normalize the orientation (the boneDir might have changed)
-					//j->orientation.perpendicularize(jointRotation);
+					j->orientation.perpendicularize(jointRotation);
 				}
 
 				// update the position of the current joint
