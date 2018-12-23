@@ -1,6 +1,7 @@
 #ifndef VECTOR_HPP_18_12_18_14_17_20
 #define VECTOR_HPP_18_12_18_14_17_20 
 #include <cmath>
+#include <ostream>
 
 class Vector {
 	public:
@@ -70,4 +71,8 @@ class Vector {
 		float y;
 		float z;
 };
+
+std::ostream& operator<<(std::ostream& o, const Vector& v) {
+	return o << v.x << " \t" << v.y << " \t" << v.z;
+}
 #endif /* VECTOR_HPP_18_12_18_14_17_20 */
