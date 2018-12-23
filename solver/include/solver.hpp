@@ -9,28 +9,27 @@
 
 namespace ik {
 	namespace FABRIK {
-		void getConstraintAnglesBasedOnQuadrant(const Vector& v, float thX, float thNX, float thY, float thNY, float& th1, float& th2)
+		void getConstraintAnglesBasedOnQuadrant(const Vector& v, float thX, float thNX, float thY, float thNY, float& thx, float& thy)
 		{
 			// the choice of the second angle on a quadrant border does not matter
-			// the order of angles (th1/th2) does not matter
 			if(v.x >= 0) {
 				if(v.y >= 0) { // quadrant I
-					th1 = thX;
-					th2 = thY;
+					thx = thX;
+					thy = thY;
 				}
 				else { // quadrant IV
-					th1 = thX;
-					th2 = thNY;
+					thx = thX;
+					thy = thNY;
 				}
 			}
 			else {
 				if(v.y >= 0) { // quadrant II
-					th1 = thNX;
-					th2 = thY;
+					thx = thNX;
+					thy = thY;
 				}
 				else { // quadrant III
-					th1 = thNX;
-					th2 = thNY;
+					thx = thNX;
+					thy = thNY;
 				}
 			}
 		}
@@ -83,12 +82,12 @@ namespace ik {
 					(thNX < M_PI/2) == 
 					(thY  < M_PI/2) == 
 					(thNY < M_PI/2)) { // ellipsoid
-				float th1,
-							th2;
-				getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, th1, th2);
+				float thx,
+							thy;
+				getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, thx, thy);
 				// a is the half-axis matching with x, it is not necessarilly the major axis
-				float a = s*tan(th1);
-				float b = s*tan(th2);
+				float a = s*tan(thx);
+				float b = s*tan(thy);
 				float sign = (t.y>=0)?1:-1;
 				auto ellipse = [&](float x) {
 					return sign*b/a*sqrt(a*a - x*x);
@@ -107,6 +106,7 @@ namespace ik {
 			}
 			else { // parabolic shape
 				//TODO
+				assert(false);
 			}
 
 			// if t is not within the conic section, move it to the closest point on the conic section (nt)
@@ -153,6 +153,7 @@ namespace ik {
 			Rrot1.rotateVector(T);
 			T = T-Rtr;
 
+			T.normalize();
 			return T;
 		}
 
