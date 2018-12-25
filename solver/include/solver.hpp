@@ -89,8 +89,11 @@ namespace ik {
 				float a = s*tan(thx);
 				float b = s*tan(thy);
 				float sign = (t.y>=0)?1:-1;
-				auto ellipse = [&](float x) {
-					return sign*b/a*sqrt(a*a - x*x);
+				auto ellipse = [&](float x)->float {
+					if(a == 0 || b == 0)
+						return 0;
+					else
+						return sign*b/a*sqrt(a*a - x*x);
 				};
 				float x1,
 							x2;
