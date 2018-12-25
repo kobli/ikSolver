@@ -128,19 +128,21 @@ namespace ik {
 			Vector t = j->position + boneDir;
 			// find projection (O) of new target position (t) onto jointPos.+lDir line
 			Vector lDir = prevBoneDir;
-			lDir.normalize();
 			Vector v = t-j->position;
 			Vector o = j->position + lDir*(v).dot(lDir);
-			// find distance (S) between t and O
-			float s = (t-o).length();
+			// find distance (S) between j and O
+			float s = (j->position-o).length();
 			// rotate and translate (using transform R) t (T) so that O is at 0 and oriented according to x,y axes
 			// prevBoneDir = z+ (screen to chair), 
 			// j.orientation = y+ (up)
+			Vector T = t;
 			Vector Rtr = o*-1;
-			Vector T = t+Rtr;
+			T = T+Rtr;
 			Quaternion Rrot1(prevBoneDir, Vector(0,0,1));
 			Rrot1.rotateVector(T);
-			Quaternion Rrot2(j->orientation, Vector(0,1,0));
+			Vector orientation = j->orientation;
+			orientation.perpendicularize(prevBoneDir);
+			Quaternion Rrot2(orientation, Vector(0,1,0));
 			Rrot2.rotateVector(T);
 
 			// find the nearest point on conic section if T lies outside of it
@@ -153,6 +155,7 @@ namespace ik {
 			Rrot1.rotateVector(T);
 			T = T-Rtr;
 
+			T = T-j->position;
 			T.normalize();
 			return T;
 		}
@@ -164,6 +167,7 @@ namespace ik {
 			// 	- now the two orientation vectors are in a plane perpendicular to the prevBoneDir
 			Quaternion q(boneDir, prevBoneDir);
 			Vector newOrientation = j->orientation;
+			newOrientation.perpendicularize(prevBoneDir);
 			q.rotateVector(newOrientation);
 			// 2) determine the angle between Op and O of the previous joint
 			Quaternion oo(prevJointOrientation, newOrientation);
@@ -190,9 +194,6 @@ namespace ik {
 			// adjust the position of the "end-effector"
 			Vector prevJointPrevPos = j->position;
 			Vector prevJointCurPos = (j->position = endEffectorNewPos);
-
-			// normalize the new orientation
-			assert(newOrientation.perpendicularize(chain.getJoint(endEffectorID+inc).position-endEffectorNewPos));
 			
 			// adjust the orientation of the "end-effector"
 			Vector prevJointOrientation = (j->orientation = newOrientation);
@@ -213,16 +214,13 @@ namespace ik {
 				Vector jointPrevRotation = (j->position - prevJointPrevPos).normalize();
 				Quaternion r(jointPrevRotation, jointRotation);
 				r.rotateVector(j->orientation);
-				j->orientation.perpendicularize(jointRotation);
 				// constraints can be applied only if there is a preceeding bone - its rotation vector is needed
 				if(hasPreceedingBone) {
 					// apply orientation constraints
 					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
 
 					// apply rotation constraints
-					jointRotation = constrainedJointRotation(j, jointRotation, prevJointRotation);
-					// normalize the orientation (the boneDir might have changed)
-					j->orientation.perpendicularize(jointRotation);
+					jointRotation = constrainedJointRotation(&chain.getJoint(i-inc), jointRotation, prevJointRotation);
 				}
 
 				// update the position of the current joint

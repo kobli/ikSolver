@@ -5,7 +5,7 @@
 
 /*
  * base joint has fixed position and orientation (typically in model space)
- * orientation vector is the up vector (y+) for the coordinate system of the joint
+ * orientation vector is the up vector (y+) for the coordinate system of the joint, but it is not always perpendicular to the bone
  * to fully specify the base joint orientation (and to be able to apply the constraints), we also need a front vector (z+),
  * pointing from "previous joint" towards the base joint, which is specified by using one extra joint preceeding the base joint (only its position is relevant)
  *
