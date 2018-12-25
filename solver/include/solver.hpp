@@ -112,12 +112,10 @@ namespace ik {
 			// if t is not within the conic section, move it to the closest point on the conic section (nt)
 			Vector tt = t;
 			tt.z = 0;
-			if(tt.length() > nt.length()) {
-				nt.z = t.z;
-				return nt;
-			}
-			else
-				return t;
+			nt.z = 0;
+			if(tt.length() < nt.length())
+				nt = tt;
+			return nt;
 		}
 
 		// prevBoneDir from j-1 towards j, boneDir from j towards j+1
