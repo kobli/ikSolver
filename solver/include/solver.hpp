@@ -130,6 +130,7 @@ namespace ik {
 			Vector o = j->position + lDir*(v).dot(lDir);
 			// find distance (S) between j and O
 			float s = (j->position-o).length();
+			bool targetInLowerHemisphere = (o-j->position).dot(prevBoneDir) < 0;
 			// rotate and translate (using transform R) t (T) so that O is at 0 and oriented according to x,y axes
 			// prevBoneDir = z+ (screen to chair), 
 			// j.orientation = y+ (up)
@@ -152,6 +153,9 @@ namespace ik {
 			Rrot2.rotateVector(T);
 			Rrot1.rotateVector(T);
 			T = T-Rtr;
+
+			if(targetInLowerHemisphere)
+				T = T + prevBoneDir*2*s;
 
 			T = T-j->position;
 			T.normalize();
