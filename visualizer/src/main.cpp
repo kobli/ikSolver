@@ -41,8 +41,8 @@ using Joint = ik::Joint;
 
 void drawChain(IVideoDriver* driver, const Chain& chain) {
 	driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
-	const Joint* prevJoint = &chain.getJoint(chain.baseJointID());
-	for(unsigned i = chain.baseJointID()+1; i < chain.jointCount(); ++i) {
+	const Joint* prevJoint = &chain.getJoint(0/*chain.baseJointID()*/);
+	for(unsigned i = /*chain.baseJointID()+*/1; i < chain.jointCount(); ++i) {
 		const Joint* nextJoint = &chain.getJoint(i);
 		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(nextJoint->position));
 		driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(prevJoint->position+prevJoint->orientation*DisplayOrientationSize));
@@ -80,13 +80,16 @@ int main()
 	Chain chain;
 	float a = M_PI/2.-0.01;
 	chain.appendJoint({Vector(0)				, Vector(1, 0, 0), 0, 0, 0,0,0,0});
-	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, 0, 0,0,0,0});
-	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, a/2,a/2,0,0});
+	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, 0, 0,0,a,0});
+	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, a/2,a/2,a/2,a/2});
 	chain.appendJoint({Vector(0, 400, 0), Vector(1, 0, 0), 0, 0, 0,0,0,0});
 
 	ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();
 	camera->setPosition(vector3df(0,0,1000));
 	camera->setTarget(vector3df(0));
+
+	smgr->addCubeSceneNode(40);
+	smgr->addLightSceneNode(nullptr, vector3df(100, 0, 0), SColorf(1, 0.5, 0.5), 200);
 
 	while(device->run())
 	{
