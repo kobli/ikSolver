@@ -73,9 +73,13 @@ namespace ik {
 			if(thX == thNX && thX == thY && thX == thNY) { // circle
 				Vector tDir = t;
 				tDir.z = 0;
-				tDir.normalize();
-				float r = s*tan(thX);
-				nt = tDir*r;
+				if(tDir.length() == 0)
+					nt = t;
+				else {
+					tDir.normalize();
+					float r = s*tan(thX);
+					nt = tDir*r;
+				}
 			}
 			else if(
 					(thX  < M_PI/2) == 
