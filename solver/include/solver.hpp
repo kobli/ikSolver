@@ -109,17 +109,21 @@ namespace ik {
 					x1 = 0;
 					x2 = a;
 				}
+				assert(nt.length() == nt.length());
 				nt = findClosestPointOnFunction(t, ellipse, x1, x2);
+				assert(nt.length() == nt.length());
 			}
 			else { // parabolic shape
 				//TODO
 				assert(false);
 			}
+			assert(nt.length() == nt.length());
 
 			// if t is not within the conic section, move it to the closest point on the conic section (nt)
 			Vector tt = t;
 			tt.z = 0;
 			nt.z = 0;
+			assert(nt.length() == nt.length());
 			if(tt.length() < nt.length())
 				nt = tt;
 			return nt;
@@ -151,8 +155,10 @@ namespace ik {
 			Quaternion Rrot2(orientation, Vector(0,1,0));
 			Rrot2.rotateVector(T);
 
+			assert(T.length() == T.length());
 			// find the nearest point on conic section if T lies outside of it
 			T = nearestPointOnConicSectionIfOutside(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, s);
+			assert(T.length() == T.length());
 
 			// apply inverse R on T
 			Rrot2.setAngle(-Rrot2.getAngle());
@@ -165,6 +171,8 @@ namespace ik {
 				T = T + prevBoneDir*2*s;
 
 			T = T-j->position;
+			assert(T.length() == T.length());
+			assert(T.length() != 0);
 			T.normalize();
 			return T;
 		}
