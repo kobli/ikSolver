@@ -19,8 +19,10 @@
 namespace ik {
 	class Chain {
 		public:
-			Chain(): _baseJointID{1}
-			{}
+			Chain(unsigned jointCount = 0): _baseJointID{1}
+			{
+				_joints.resize(jointCount);
+			}
 
 			// the joints should be added starting from the base
 			// expects absolute positions of the joints
