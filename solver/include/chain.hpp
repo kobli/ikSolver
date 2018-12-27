@@ -46,6 +46,10 @@ namespace ik {
 				return _baseJointID;
 			}
 
+			void setBaseJointID(unsigned bID) {
+				_baseJointID = bID;
+			}
+
 		private:
 			unsigned _baseJointID;
 			std::vector<Joint> _joints;
