@@ -208,6 +208,13 @@ namespace ik {
 			int inc = endEffectorID > baseID? -1: 1;
 
 			Joint* j = &chain.getJoint(endEffectorID);
+
+			Vector eeDelta = endEffectorNewPos-j->position;
+			for(int i = endEffectorID+inc; i >= 0 && (unsigned)i < chain.jointCount(); i -= inc) {
+				Vector &p = chain.getJoint(i).position;
+				p = p + eeDelta;
+			}
+
 			// adjust the position of the "end-effector"
 			Vector prevJointPrevPos = j->position;
 			Vector prevJointCurPos = (j->position = endEffectorNewPos);
