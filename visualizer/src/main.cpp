@@ -1,3 +1,4 @@
+#include <random>
 #include <irrlicht.h>
 #include "solver.hpp"
 
@@ -50,6 +51,34 @@ void drawChain(IVideoDriver* driver, const Chain& chain) {
 		prevJoint = nextJoint;
 	}
 	driver->draw3DLine(vTov3f(prevJoint->position), vTov3f(prevJoint->position+prevJoint->orientation*DisplayOrientationSize));
+}
+
+void drawJointRotationConstraints(IVideoDriver* driver, const Chain& chain) {
+	random_device rd{};
+	mt19937 gen{rd()};
+	normal_distribution<> d{0,1};
+
+	for(unsigned i = 1; i < chain.jointCount()-1; ++i) {
+		const Joint& j = chain.getJoint(i);
+		Vector jointPos = j.position;
+		float boneLength = (jointPos-chain.getJoint(i+1).position).length();
+
+		const unsigned sampleC = 1000;
+		for(unsigned ii = 0; ii < sampleC; ++ii) {
+			// pick a random point on a sphere around the joint
+			Vector p;
+			p.x = d(gen);
+			p.y = d(gen);
+			p.z = d(gen);
+			p.normalize();
+			p = jointPos + p*boneLength;
+			Vector prevBoneDir = (jointPos-chain.getJoint(i-1).position).normalize();
+			Vector restrictedP = ik::FABRIK::constrainedJointRotation(&j, p, prevBoneDir);
+			const float pointConcentration = 0.1;
+			restrictedP = jointPos + (restrictedP-jointPos)*pointConcentration;
+			driver->draw3DLine(vTov3f(restrictedP), vTov3f(restrictedP+0.1));
+		}
+	}
 }
 
 class MyEventReceiver : public IEventReceiver
@@ -107,6 +136,7 @@ int main()
 			device->getCursorControl()->setVisible(false);
 		}
 		drawChain(driver, chain);
+		drawJointRotationConstraints(driver, chain);
 		smgr->drawAll();
 		driver->endScene();
 	}
