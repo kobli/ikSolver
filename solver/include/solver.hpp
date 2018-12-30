@@ -210,7 +210,7 @@ namespace ik {
 			Joint* j = &chain.getJoint(endEffectorID);
 
 			Vector eeDelta = endEffectorNewPos-j->position;
-			for(int i = int(endEffectorID)-inc; i >= 0 && i != (int)chain.baseJointID() && i < (int)chain.jointCount(); i -= inc) {
+			for(int i = int(endEffectorID)-inc; i > (int)chain.baseJointID() && i >= 0 && i < (int)chain.jointCount(); i -= inc) {
 				Vector &p = chain.getJoint(i).position;
 				p = p + eeDelta;
 			}
