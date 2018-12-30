@@ -204,11 +204,8 @@ namespace ik {
 
 			Joint* j = &chain.getJoint(endEffectorID);
 
-			Vector eeDelta = endEffectorNewPos-j->position;
-			for(int i = int(endEffectorID)-inc; i > (int)chain.baseJointID() && i >= 0 && i < (int)chain.jointCount(); i -= inc) {
-				Vector &p = chain.getJoint(i).position;
-				p = p + eeDelta;
-			}
+			const Vector eeInitialPos = chain.getJoint(endEffectorID).position;
+			const Vector baseInitialPos = chain.getJoint(baseID).position;
 
 			// adjust the position of the "end-effector"
 			Vector prevJointPrevPos = j->position;
@@ -248,6 +245,20 @@ namespace ik {
 				prevJointRotation = jointRotation;
 				prevJointOrientation = j->orientation;
 				hasPreceedingBone = true;
+			}
+
+			// preserve bone lengths when the base-endEffector subchain does not lie at the tip of the chain
+			Vector baseDelta = chain.getJoint(baseID).position - baseInitialPos;
+			Vector eeDelta   = chain.getJoint(endEffectorID).position - eeInitialPos;
+			Vector delta = baseDelta;
+			unsigned i = baseID;
+			if(endEffectorID > baseID) {
+				i = endEffectorID;
+				delta = eeDelta;
+			}
+			for(i += 1; i < chain.jointCount(); ++i) {
+				Vector &p = chain.getJoint(i).position;
+				p = p + delta;
 			}
 		}
 
