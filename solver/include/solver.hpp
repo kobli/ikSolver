@@ -34,7 +34,7 @@ namespace ik {
 			}
 		}
 
-		Vector findClosestPointOnFunction(Vector t, std::function<float(float)> f, float x1, float x2, float yEps = 0.1)
+		Vector findClosestPointOnFunction(Vector t, std::function<float(float)> f, float x1, float x2, float xEps = 1)
 		{
 			t.z = 0;
 			float y1 = f(x1);
@@ -42,23 +42,23 @@ namespace ik {
 			auto d = [&](const Vector& v) {
 				return (v-t).length();
 			};
-			float yDelta = 2*yEps; // anything that is larger than yEps will do
-			float prevDelta = 2*yDelta;
-			while(yDelta > yEps && x1 != x2 && prevDelta != yDelta) {
+			float xDelta = 2*xEps; // anything that is larger than xEps will do
+			float prevDelta = 2*xDelta;
+			while(xDelta > xEps && x1 != x2 && prevDelta != xDelta) {
 				float xMid = (x1+x2)/2;
 				float yMid = f(xMid);
 				float dm = d({xMid,yMid,0});
 				float d1 = d({x1,y1,0});
 				float d2 = d({x2,y2,0});
-				prevDelta = yDelta;
+				prevDelta = xDelta;
 				if(dm < d1) {
+					xDelta = fabs(x1-yMid);
 					x1 = xMid;
-					yDelta = fabs(y1-yMid);
 					y1 = yMid;
 				}
 				else if(dm < d2) {
+					xDelta = fabs(x2-xMid);
 					x2 = xMid;
-					yDelta = fabs(y2-yMid);
 					y2 = yMid;
 				}
 			}
