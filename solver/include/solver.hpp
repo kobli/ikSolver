@@ -109,7 +109,6 @@ namespace ik {
 					x1 = 0;
 					x2 = a;
 				}
-				assert(nt.length() == nt.length());
 				nt = findClosestPointOnFunction(t, ellipse, x1, x2);
 				assert(nt.length() == nt.length());
 			}
