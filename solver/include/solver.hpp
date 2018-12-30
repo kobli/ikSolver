@@ -129,12 +129,11 @@ namespace ik {
 			return nt;
 		}
 
-		// prevBoneDir from j-1 towards j, boneDir from j towards j+1
-		Vector constrainedJointRotation(const Joint* j, Vector boneDir, Vector prevBoneDir)
+		// prevBoneDir from j-1 towards j, t is the new position of j+1
+		// returns adjusted target position
+		Vector constrainedJointRotation(const Joint* j, Vector t, Vector prevBoneDir)
 		{
-			boneDir.normalize();
 			prevBoneDir.normalize();
-			Vector t = j->position + boneDir;
 			// find projection (O) of new target position (t) onto jointPos.+lDir line
 			Vector lDir = prevBoneDir;
 			Vector v = t-j->position;
@@ -170,10 +169,6 @@ namespace ik {
 			if(targetInLowerHemisphere)
 				T = T + prevBoneDir*2*s;
 
-			T = T-j->position;
-			assert(T.length() == T.length());
-			assert(T.length() != 0);
-			T.normalize();
 			return T;
 		}
 
@@ -244,7 +239,7 @@ namespace ik {
 					j->orientation = constrainedJointOrientation(j, prevJointOrientation, jointRotation, prevJointRotation);
 
 					// apply rotation constraints
-					jointRotation = constrainedJointRotation(&chain.getJoint(i-inc), jointRotation, prevJointRotation);
+					jointRotation = (constrainedJointRotation(&chain.getJoint(i-inc), prevJointCurPos + jointRotation*boneLength, prevJointRotation)-prevJointCurPos).normalize();
 				}
 
 				// update the position of the current joint
