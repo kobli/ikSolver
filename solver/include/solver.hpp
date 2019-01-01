@@ -158,6 +158,15 @@ namespace ik {
 					Rtr = Rtr + prevBoneDir*2*s;
 				}
 			}
+			else if(thx > M_PI_2 && thy > M_PI_2) {
+				if(targetInUpperHemisphere) {
+					// do nothing
+				}
+				else {
+					if(T.length() < nT.length())
+						T = nT;
+				}
+			}
 
 			// apply inverse R on T
 			Rrot2.setAngle(-Rrot2.getAngle());
