@@ -66,11 +66,8 @@ namespace ik {
 		}
 
 		// currently works only when all thetas are smaller than PI/2
-		Vector nearestPointOnConicSectionIfOutside(const Vector& t, float thX, float thNX, float thY, float thNY, float s)
+		Vector nearestPointOnConicSection(const Vector& t, float thx, float thy, float s)
 		{
-			float thx,
-						thy;
-			getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, thx, thy);
 			// find the closest point to t (nt) lying on the conicsection
 			Vector nt;
 			if(thx == thy) { // circle
@@ -84,8 +81,7 @@ namespace ik {
 					nt = tDir*r;
 				}
 			}
-			else if(
-					(thx  < M_PI/2) == (thy < M_PI/2)) { // ellipsoid
+			else if((thx  < M_PI/2) == (thy < M_PI/2)) { // ellipsoid
 				// a is the half-axis matching with x, it is not necessarilly the major axis
 				float a = s*tan(thx);
 				float b = s*tan(thy);
@@ -113,15 +109,7 @@ namespace ik {
 				//TODO
 				assert(false);
 			}
-			assert(nt.length() == nt.length());
-
-			// if t is not within the conic section, move it to the closest point on the conic section (nt)
-			Vector tt = t;
-			tt.z = 0;
 			nt.z = 0;
-			assert(nt.length() == nt.length());
-			if(tt.length() < nt.length())
-				nt = tt;
 			return nt;
 		}
 
@@ -149,11 +137,18 @@ namespace ik {
 			orientation.perpendicularize(prevBoneDir);
 			Quaternion Rrot2(orientation, Vector(0,1,0));
 			Rrot2.rotateVector(T);
+			T.z = 0;
+			assert(T.length() == T.length());
 
-			assert(T.length() == T.length());
-			// find the nearest point on conic section if T lies outside of it
-			T = nearestPointOnConicSectionIfOutside(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, s);
-			assert(T.length() == T.length());
+			// if T lies outside the conic section, replace it with the nearest point on the conic section (nT)
+			float thx,
+						thy;
+			getConstraintAnglesBasedOnQuadrant(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, thx, thy);
+			Vector nT = nearestPointOnConicSection(T, thx, thy, s);
+			assert(nT.length() == nT.length());
+			// if T is not within the conic section, replace it with the closest point on the conic section (nT)
+			if(T.length() > nT.length())
+				T = nT;
 
 			// apply inverse R on T
 			Rrot2.setAngle(-Rrot2.getAngle());
