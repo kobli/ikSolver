@@ -68,27 +68,24 @@ namespace ik {
 		// currently works only when all thetas are smaller than PI/2
 		Vector nearestPointOnConicSectionIfOutside(const Vector& t, float thX, float thNX, float thY, float thNY, float s)
 		{
+			float thx,
+						thy;
+			getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, thx, thy);
 			// find the closest point to t (nt) lying on the conicsection
 			Vector nt;
-			if(thX == thNX && thX == thY && thX == thNY) { // circle
+			if(thx == thy) { // circle
 				Vector tDir = t;
 				tDir.z = 0;
 				if(tDir.length() == 0)
 					nt = t;
 				else {
 					tDir.normalize();
-					float r = s*tan(thX);
+					float r = s*tan(thx);
 					nt = tDir*r;
 				}
 			}
 			else if(
-					(thX  < M_PI/2) == 
-					(thNX < M_PI/2) == 
-					(thY  < M_PI/2) == 
-					(thNY < M_PI/2)) { // ellipsoid
-				float thx,
-							thy;
-				getConstraintAnglesBasedOnQuadrant(t, thX, thNX, thY, thNY, thx, thy);
+					(thx  < M_PI/2) == (thy < M_PI/2)) { // ellipsoid
 				// a is the half-axis matching with x, it is not necessarilly the major axis
 				float a = s*tan(thx);
 				float b = s*tan(thy);
