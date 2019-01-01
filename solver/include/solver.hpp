@@ -124,13 +124,13 @@ namespace ik {
 			Vector o = j->position + lDir*(v).dot(lDir);
 			// find distance (S) between j and O
 			float s = (j->position-o).length();
-			bool targetInLowerHemisphere = (o-j->position).dot(prevBoneDir) < 0;
+			bool targetInUpperHemisphere = (o-j->position).dot(prevBoneDir) > 0;
 			// rotate and translate (using transform R) t (T) so that O is at 0 and oriented according to x,y axes
 			// prevBoneDir = z+ (screen to chair), 
 			// j.orientation = y+ (up)
 			Vector T = t;
-			Vector Rtr = o*-1;
-			T = T+Rtr;
+			Vector Rtr = o;
+			T = T-Rtr;
 			Quaternion Rrot1(prevBoneDir, Vector(0,0,1));
 			Rrot1.rotateVector(T);
 			Vector orientation = j->orientation;
@@ -146,19 +146,25 @@ namespace ik {
 			getConstraintAnglesBasedOnQuadrant(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, thx, thy);
 			Vector nT = nearestPointOnConicSection(T, thx, thy, s);
 			assert(nT.length() == nT.length());
-			// if T is not within the conic section, replace it with the closest point on the conic section (nT)
-			if(T.length() > nT.length())
-				T = nT;
+			// adjust T if necessary
+			if(thx < M_PI_2 && thy < M_PI_2) {
+				if(targetInUpperHemisphere) {
+					if(T.length() > nT.length())
+						T = nT;
+				}
+				else {
+					T = nT;
+					// move T along l so it lies on the conic section
+					Rtr = Rtr + prevBoneDir*2*s;
+				}
+			}
 
 			// apply inverse R on T
 			Rrot2.setAngle(-Rrot2.getAngle());
 			Rrot1.setAngle(-Rrot1.getAngle());
 			Rrot2.rotateVector(T);
 			Rrot1.rotateVector(T);
-			T = T-Rtr;
-
-			if(targetInLowerHemisphere)
-				T = T + prevBoneDir*2*s;
+			T = T+Rtr;
 
 			return T;
 		}
