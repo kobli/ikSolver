@@ -106,8 +106,31 @@ namespace ik {
 				assert(nt.length() == nt.length());
 			}
 			else { // parabolic shape
-				//TODO
-				assert(false);
+				if(thy > M_PI_2) { // opening in y+ / y- direction
+					float sign = (t.y>=0)?1:-1;
+					Vector v(0, targetHemisphere*sign*s*tan(thy), 0); // vertex
+					Vector p(s*tan(thx), 0, 0); // point
+					float a = (p.y-v.y)/pow(p.x-v.x,2);
+					a = fabs(a);
+					auto parabola = [&](float x)->float {
+						return sign*a*pow(x-v.x, 2)+v.y;
+					};
+					float x1,x2;
+					//TODO FIXME? are there any requirements for the closestPoint? maybe use different (tighter) bounds
+					if(t.x < 0) {
+						x1 = -l;
+						x2 = 0;
+					}
+					else {
+						x1 = 0;
+						x2 = l;
+					}
+					nt = findClosestPointOnFunction(t, parabola, x1, x2);
+					assert(nt.length() == nt.length());
+				}
+				else { //TODO opening in x direction
+					assert(false);
+				}
 			}
 			nt.z = 0;
 			return nt;
@@ -118,7 +141,9 @@ namespace ik {
 		Vector constrainedJointRotation(const Joint* j, Vector t, Vector prevBoneDir)
 		{
 			prevBoneDir.normalize();
+			float boneLength = (j->position-t).length();
 			// find projection (O) of new target position (t) onto jointPos.+lDir line
+			// TODO FIXME problem if t projects onto j->position
 			Vector lDir = prevBoneDir;
 			Vector v = t-j->position;
 			Vector o = j->position + lDir*(v).dot(lDir);
@@ -144,7 +169,7 @@ namespace ik {
 			float thx,
 						thy;
 			getConstraintAnglesBasedOnQuadrant(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, thx, thy);
-			Vector nT = nearestPointOnConicSection(T, thx, thy, s);
+			Vector nT = nearestPointOnConicSection(T, thx, thy, s, boneLength);
 			assert(nT.length() == nT.length());
 			// adjust T if necessary
 			if(thx < M_PI_2 && thy < M_PI_2) {
@@ -164,6 +189,18 @@ namespace ik {
 				}
 				else {
 					if(T.length() < nT.length())
+						T = nT;
+				}
+			}
+			else {
+				if(targetInUpperHemisphere) {
+					//if(T.length() > nT.length()) //TODO FIXME?
+						T = nT;
+				}
+				else {
+					nT = nearestPointOnConicSection(T, 0.001, thy, s, boneLength, -1);
+					assert(nT.length() == nT.length());
+					//if(T.length() > nT.length()) //TODO FIXME?
 						T = nT;
 				}
 			}
