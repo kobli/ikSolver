@@ -68,6 +68,11 @@ namespace ik {
 		// currently works only when all thetas are smaller than PI/2
 		Vector nearestPointOnConicSection(const Vector& t, float thx, float thy, float s, float l, bool& tOutside, int targetHemisphere = 1)
 		{
+			// avoid zero-length semi-axes
+			if(thx == 0)
+				thx += 0.0001;
+			if(thy == 0)
+				thy += 0.0001;
 			// find the closest point to t (nt) lying on the conicsection
 			Vector nt;
 			if(thx == thy) { // circle
