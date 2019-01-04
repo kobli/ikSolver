@@ -66,7 +66,7 @@ namespace ik {
 		}
 
 		// currently works only when all thetas are smaller than PI/2
-		Vector nearestPointOnConicSection(const Vector& t, float thx, float thy, float s, float l, bool& tOutside, int targetHemisphere = 1)
+		Vector nearestPointOnConicSection(Vector t, float thx, float thy, float s, float l, bool& tOutside, int targetHemisphere = 1)
 		{
 			// avoid zero-length semi-axes
 			if(thx == 0)
@@ -111,31 +111,45 @@ namespace ik {
 				assert(nt.length() == nt.length());
 			}
 			else { // parabolic shape
-				if(thy > M_PI_2) { // opening in y+ / y- direction
-					float sign = (t.y>=0)?1:-1;
-					Vector v(0, targetHemisphere*sign*s*tan(thy), 0); // vertex
-					Vector p(s*tan(thx), 0, 0); // point
-					float a = (p.y-v.y)/pow(p.x-v.x,2);
-					a = fabs(a);
-					auto parabola = [&](float x)->float {
-						return sign*a*pow(x-v.x, 2)+v.y;
-					};
-					tOutside = parabola(t.x)*sign > 0;
-					float x1,x2;
-					//TODO FIXME? are there any requirements for the closestPoint? maybe use different (tighter) bounds
-					if(t.x < 0) {
-						x1 = -l;
-						x2 = 0;
-					}
-					else {
-						x1 = 0;
-						x2 = l;
-					}
-					nt = findClosestPointOnFunction(t, parabola, x1, x2);
-					assert(nt.length() == nt.length());
+				if(targetHemisphere == -1) {
+					if(thy > M_PI_2)
+						thx = 0.0001;
+					else
+						thy = 0.0001;
 				}
-				else { //TODO opening in x direction
-					assert(false);
+				bool swappedXY = false;
+				if(thx > M_PI_2) { // opening in x+ / x- direction
+					swappedXY = true;
+					std::swap(thx, thy);
+					std::swap(t.x, t.y);
+				}
+				// opening in y+ / y- direction
+				float sign = (t.y>=0)?1:-1;
+				Vector v(0, targetHemisphere*sign*s*tan(thy), 0); // vertex
+				Vector p(s*tan(thx), 0, 0); // point
+				float a = (p.y-v.y)/pow(p.x-v.x,2);
+				a = fabs(a);
+				auto parabola = [&](float x)->float {
+					return sign*a*pow(x-v.x, 2)+v.y;
+				};
+				tOutside = parabola(t.x)*sign > 0;
+				float x1,x2;
+				//TODO FIXME? are there any requirements for the closestPoint? maybe use different (tighter) bounds
+				if(t.x < 0) {
+					x1 = -l;
+					x2 = 0;
+				}
+				else {
+					x1 = 0;
+					x2 = l;
+				}
+				nt = findClosestPointOnFunction(t, parabola, x1, x2);
+				assert(nt.length() == nt.length());
+
+				if(swappedXY) {
+					std::swap(thx, thy);
+					std::swap(t.x, t.y);
+					std::swap(nt.x, nt.y);
 				}
 			}
 			nt.z = 0;
@@ -208,7 +222,7 @@ namespace ik {
 						T = nT;
 				}
 				else {
-					nT = nearestPointOnConicSection(T, 0.001, thy, s, boneLength, tOutside, -1);
+					nT = nearestPointOnConicSection(T, thx, thy, s, boneLength, tOutside, -1);
 					assert(nT.length() == nT.length());
 					if(tOutside)
 						T = nT;
