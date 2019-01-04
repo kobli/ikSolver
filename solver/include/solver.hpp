@@ -148,8 +148,11 @@ namespace ik {
 		{
 			prevBoneDir.normalize();
 			float boneLength = (j->position-t).length();
+			// make sure t does not project onto j->position (which would cause the cut of the cone to have zero area
+			// => we would not be able to calculate the new position of t)
+			if((t-j->position).normalize().dot(prevBoneDir) == 0)
+				t = t + prevBoneDir*0.0001;
 			// find projection (O) of new target position (t) onto jointPos.+lDir line
-			// TODO FIXME problem if t projects onto j->position
 			Vector lDir = prevBoneDir;
 			Vector v = t-j->position;
 			Vector o = j->position + lDir*(v).dot(lDir);
