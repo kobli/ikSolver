@@ -177,6 +177,7 @@ namespace ik {
 			// prevBoneDir = z+ (screen to chair), 
 			// j.orientation = y+ (up)
 			Vector T = t;
+			assert(T.length() == T.length());
 			Vector Rtr = o;
 			T = T-Rtr;
 			Quaternion Rrot1(prevBoneDir, Vector(0,0,1));
@@ -229,6 +230,7 @@ namespace ik {
 						T = nT;
 				}
 			}
+			assert(T.length() == T.length());
 
 			// apply inverse R on T
 			Rrot2.setAngle(-Rrot2.getAngle());
@@ -237,6 +239,7 @@ namespace ik {
 			Rrot1.rotateVector(T);
 			T = T+Rtr;
 
+			assert(T.length() == T.length());
 			return T;
 		}
 
