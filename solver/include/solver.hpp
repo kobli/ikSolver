@@ -183,6 +183,7 @@ namespace ik {
 			Rrot1.rotateVector(T);
 			Vector orientation = j->orientation;
 			orientation.perpendicularize(prevBoneDir);
+			Rrot1.rotateVector(orientation);
 			Quaternion Rrot2(orientation, Vector(0,1,0));
 			Rrot2.rotateVector(T);
 			T.z = 0;
