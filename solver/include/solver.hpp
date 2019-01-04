@@ -66,7 +66,7 @@ namespace ik {
 		}
 
 		// currently works only when all thetas are smaller than PI/2
-		Vector nearestPointOnConicSection(const Vector& t, float thx, float thy, float s)
+		Vector nearestPointOnConicSection(const Vector& t, float thx, float thy, float s, float l, bool& tOutside, int targetHemisphere = 1)
 		{
 			// find the closest point to t (nt) lying on the conicsection
 			Vector nt;
@@ -115,6 +115,7 @@ namespace ik {
 					auto parabola = [&](float x)->float {
 						return sign*a*pow(x-v.x, 2)+v.y;
 					};
+					tOutside = parabola(t.x)*sign > 0;
 					float x1,x2;
 					//TODO FIXME? are there any requirements for the closestPoint? maybe use different (tighter) bounds
 					if(t.x < 0) {
@@ -169,7 +170,8 @@ namespace ik {
 			float thx,
 						thy;
 			getConstraintAnglesBasedOnQuadrant(T, j->maxRotAngleX, j->maxRotAngleNX, j->maxRotAngleY, j->maxRotAngleNY, thx, thy);
-			Vector nT = nearestPointOnConicSection(T, thx, thy, s, boneLength);
+			bool tOutside;
+			Vector nT = nearestPointOnConicSection(T, thx, thy, s, boneLength, tOutside);
 			assert(nT.length() == nT.length());
 			// adjust T if necessary
 			if(thx < M_PI_2 && thy < M_PI_2) {
@@ -194,13 +196,13 @@ namespace ik {
 			}
 			else {
 				if(targetInUpperHemisphere) {
-					//if(T.length() > nT.length()) //TODO FIXME?
+					if(tOutside)
 						T = nT;
 				}
 				else {
-					nT = nearestPointOnConicSection(T, 0.001, thy, s, boneLength, -1);
+					nT = nearestPointOnConicSection(T, 0.001, thy, s, boneLength, tOutside, -1);
 					assert(nT.length() == nT.length());
-					//if(T.length() > nT.length()) //TODO FIXME?
+					if(tOutside)
 						T = nT;
 				}
 			}
