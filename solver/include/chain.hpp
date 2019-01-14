@@ -4,51 +4,31 @@
 #include "joint.hpp"
 
 /*
- * base joint has fixed position and orientation (typically in model space)
- * orientation vector is the up vector (y+) for the coordinate system of the joint, but it is not always perpendicular to the bone
- * to fully specify the base joint orientation (and to be able to apply the constraints), we also need a front vector (z+),
- * pointing from "previous joint" towards the base joint, which is specified by using one extra joint preceeding the base joint (only its position is relevant)
+ * The joint positions and directions are absolute.
+ * Base joint has fixed position and orientation. To be able to enforce rotation constraints for the base joint, it requires one more joint preceeding it (with arbitrary position). Therefore baseJointID should typically be 1.
+ * Orientation vector is the up vector (y+) for the coordinate system of the joint, but it is not always kept perpendicular to the bone.
+ * The constraints of the endEffector are irrelevant since there is no bone going out from it.
  *
- * the constraints of the endEffector are ignored since there is no bone going out from it
- *
- * constraints in the base joint define
+ * constraints in a joint define
  * - how much the orientation can differ from the or. of the previous joint
  * - what are the allowed angles of the outgoing bone w.r.t the ingoing bone
+ *
+ * The baseJointID can be adjusted at any time to fixate the part of the chain preceeding the given joint.
  */
 
 namespace ik {
 	class Chain {
 		public:
-			Chain(unsigned jointCount = 0): _baseJointID{1}
-			{
-				_joints.resize(jointCount);
-			}
+			Chain(unsigned jointCount = 0);
 
 			// the joints should be added starting from the base
 			// expects absolute positions of the joints
-			void appendJoint(const Joint& j) {
-				_joints.push_back(j);
-			}
-
-			Joint& getJoint(unsigned jointID) {
-				return _joints[jointID];
-			}
-
-			const Joint& getJoint(unsigned jointID) const {
-				return _joints[jointID];
-			}
-
-			unsigned jointCount() const {
-				return _joints.size();
-			}
-
-			unsigned baseJointID() const {
-				return _baseJointID;
-			}
-
-			void setBaseJointID(unsigned bID) {
-				_baseJointID = bID;
-			}
+			void appendJoint(const Joint& j);
+			Joint& getJoint(unsigned jointID);
+			const Joint& getJoint(unsigned jointID) const;
+			unsigned jointCount() const;
+			unsigned baseJointID() const;
+			void setBaseJointID(unsigned bID);
 
 		private:
 			unsigned _baseJointID;
