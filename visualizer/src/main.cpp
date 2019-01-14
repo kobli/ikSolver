@@ -70,13 +70,15 @@ void drawJointRotationConstraints(IVideoDriver* driver, const Chain& chain) {
 			p.x = d(gen);
 			p.y = d(gen);
 			p.z = d(gen);
-			p.normalize();
-			p = jointPos + p*boneLength;
-			Vector prevBoneDir = (jointPos-chain.getJoint(i-1).position).normalize();
-			Vector restrictedP = ik::FABRIK::constrainedJointRotation(&j, p, prevBoneDir);
-			const float pointConcentration = 0.1;
-			restrictedP = jointPos + (restrictedP-jointPos)*pointConcentration;
-			driver->draw3DLine(vTov3f(restrictedP), vTov3f(restrictedP+0.1));
+			if(p.length() != 0) {
+				p.normalize();
+				p = jointPos + p*boneLength;
+				Vector prevBoneDir = (jointPos-chain.getJoint(i-1).position).normalize();
+				Vector restrictedP = ik::FABRIK::constrainedJointRotation(&j, p, prevBoneDir);
+				const float pointConcentration = 0.1;
+				restrictedP = jointPos + (restrictedP-jointPos)*pointConcentration;
+				driver->draw3DLine(vTov3f(restrictedP), vTov3f(restrictedP+0.1));
+			}
 		}
 	}
 }
@@ -107,11 +109,12 @@ int main()
 	ISceneManager* smgr = device->getSceneManager();
 
 	Chain chain;
-	float a = M_PI/2.-0.01;
 	chain.appendJoint({Vector(0)				, Vector(1, 0, 0), 0, 0, 0,0,0,0});
-	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, 0, 0,0,a,0});
-	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, a/2,a/2,a/2,a/2});
-	chain.appendJoint({Vector(0, 400, 0), Vector(1, 0, 0), 0, 0, 0,0,0,0});
+	chain.appendJoint({Vector(0, 150, 0), Vector(1, 0, 0), 0, M_PI, M_PI_2,M_PI_2,0,0});
+	chain.appendJoint({Vector(0, 250, 0), Vector(1, 0, 0), 0, 0, M_PI,0,M_PI,0});
+	//chain.appendJoint({Vector(0, 350, 0), Vector(1, 0, 0), 0, 0, });
+	//chain.appendJoint({Vector(0, 450, 0), Vector(1, 0, 0), 0, 0, });
+	//chain.appendJoint({Vector(0, 500, 0), Vector(1, 0, 0), 0, 0, });
 
 	ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();
 	camera->setPosition(vector3df(0,0,1000));
